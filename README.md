@@ -2,8 +2,9 @@ sosi2shape.py
 =============
 Requirements
 -----------
-SOSI<->Shape 3.0
-ArcGis extensions to python arcpy
+-SOSI<->Shape 3.0
+
+-ArcGis extensions to python arcpy
 
 Description
 -----------
