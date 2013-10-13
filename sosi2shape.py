@@ -9,15 +9,6 @@
 import arcpy, os, os.path, subprocess, re
 from arcpy import env
 
-#User options
-sosidir = "c:\\SOSI\\" #path to sosi files
-clipfeature = False  # path to feature class to clip from. Set to False to skip clippings
-#clipfeature = "c:\\sos\\clip.shp" #path to feature file to clip from comment this line to not clip features
-outputdir = "c:\\SOSI\\result\\" #dir to move the resulting files to
-merge = True # set this to false to not merge features
-deletepreclip = True # Set this to false to keep files that are created before clipping
-fileprefix = "^[0-9][0-9]_[0-9][0-9][0-9][0-9]" #Defines the common prefix for your sosifiles. Used when merging. You can use [0-9] to replace unknown numbers
-sosishapebin = r'"C:\Program Files (x86)\Geodata AS\SOSI-Shape\bin\Sosi2Av.exe"' # Path to the executable Sosi2Av.exe from Sosi<->shape
 
 
 
@@ -57,10 +48,10 @@ def getKoordsys(sosifile):
 				break
 		koordsys = koordsysStr.replace("...koordsys ", "")
 		return int(koordsys)
-def mergeFeatureClasses(shapedir):
+def mergeFeatureClasses(fileprefix, shapedir, outputdir):
 	if not os.path.isdir(outputdir):
 		os.makedirs(outputdir)
-	for root, _, files in os.walk(sosidir):
+	for root, _, files in os.walk(shapedir):
 	    for f in files:
 	        fullpath = os.path.join(root, f)
 	        if f.lower().endswith(".shp"):
@@ -79,7 +70,6 @@ def mergeFeatureClasses(shapedir):
 def removeEmptyShapeFile(shapefile):
 	#cleans up empty shape files after processing
 	count = int(arcpy.GetCount_management(shapefile).getOutput(0)) 
-	print count
 	if count == 0:
 		print "Removing "+shapefile
 		arcpy.Delete_management(shapefile)
@@ -92,7 +82,7 @@ def defineProjection(sosifile, shapefile):
 	sr = koordsysdict[koordsys]
 	arcpy.DefineProjection_management(shapefile, sr)
 
-def executeSosiShape(args, f,fullpath, tempDir,append):
+def executeSosiShape(sosishapebin, args, f,fullpath, tempDir,append):
 	flower = f.lower().replace('.sos','')
 	output = tempDir+flower+"_"+append
 	arg = args.format(fullpath, output)
@@ -100,14 +90,14 @@ def executeSosiShape(args, f,fullpath, tempDir,append):
 	shapefile = output+'.shp'
 	if removeEmptyShapeFile(shapefile):
 		defineProjection(fullpath, shapefile)
-def cleanup(tempDir):
+def cleanup(tempDir, outputdir):
 	for root, _, files in os.walk(tempDir):
 	    for f in files:
 	        fullpath = os.path.join(root, f)
 	        if f.lower().endswith(".shp"):
 	            arcpy.Copy_management(fullpath,outputdir+f)
 	            arcpy.Delete_management(fullpath)
-def dir2shape(): 
+def dir2shape(sosidir, clipfeature, outputdir, merge, deletepreclip, fileprefix, sosishapebin): 
 	tempDir = sosidir+"tmp\\"
 	if not os.path.isdir(tempDir):
 		os.makedirs(tempDir)
@@ -118,17 +108,17 @@ def dir2shape():
 	    for f in files:
 	        fullpath = os.path.join(root, f)
 	        if f.lower().endswith(".sos"):
-	            executeSosiShape(lineargs,f,fullpath,tempDir,"l")
-	            executeSosiShape(polygonargs,f,fullpath,tempDir,"f")
-	            executeSosiShape(pointargs,f,fullpath,tempDir,"p")
+	            executeSosiShape(sosishapebin,lineargs,f,fullpath,tempDir,"l")
+	            executeSosiShape(sosishapebin,polygonargs,f,fullpath,tempDir,"f")
+	            executeSosiShape(sosishapebin,pointargs,f,fullpath,tempDir,"p")
 	if clipfeature:
-		clipfeatureclasses(clipfeature, tempDir)
+		clipfeatureclasses(clipfeature, deletepreclip, tempDir)
 	if merge:
-		mergeFeatureClasses(tempDir)
+		mergeFeatureClasses(fileprefix, tempDir, outputdir)
 	else:
-		cleanup(tempDir)
-		
-def clipfeatureclasses(clipFeature, indir):
+		cleanup(tempDir, outputdir)
+
+def clipfeatureclasses(clipFeature, deletepreclip, indir):
 	feature_classes = []
 	for root, _, files in os.walk(indir): #os.walk instead of arcpy.da.Walk because 10.1 sp1 is not installed
 	    for f in files:
@@ -142,4 +132,3 @@ def clipfeatureclasses(clipFeature, indir):
 		removeEmptyShapeFile(shapefile)
 		if deletepreclip:
 			arcpy.Delete_management(feature)
-dir2shape()
