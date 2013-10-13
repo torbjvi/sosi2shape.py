@@ -71,18 +71,18 @@ def removeEmptyShapeFile(shapefile):
 	#cleans up empty shape files after processing
 	count = int(arcpy.GetCount_management(shapefile).getOutput(0)) 
 	if count == 0:
-		print "Removing "+shapefile
+		print "Empty output, removing "+shapefile
 		arcpy.Delete_management(shapefile)
 		return False
 	return True
 
 def defineProjection(sosifile, shapefile):
 	koordsys = getKoordsys(sosifile)
-	print koordsys
 	sr = koordsysdict[koordsys]
 	arcpy.DefineProjection_management(shapefile, sr)
 
 def executeSosiShape(sosishapebin, args, f,fullpath, tempDir,append):
+	print f+":"
 	flower = f.lower().replace('.sos','')
 	output = tempDir+flower+"_"+append
 	arg = args.format(fullpath, output)
