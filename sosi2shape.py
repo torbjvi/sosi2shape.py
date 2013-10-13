@@ -100,7 +100,13 @@ def executeSosiShape(args, f,fullpath, tempDir,append):
 	shapefile = output+'.shp'
 	if removeEmptyShapeFile(shapefile):
 		defineProjection(fullpath, shapefile)
-
+def cleanup(tempDir):
+	for root, _, files in os.walk(tempDir):
+	    for f in files:
+	        fullpath = os.path.join(root, f)
+	        if f.lower().endswith(".shp"):
+	            arcpy.Copy_management(fullpath,outputdir+f)
+	            arcpy.Delete_management(fullpath)
 def dir2shape(): 
 	tempDir = sosidir+"tmp\\"
 	if not os.path.isdir(tempDir):
@@ -119,6 +125,9 @@ def dir2shape():
 		clipfeatureclasses(clipfeature, tempDir)
 	if merge:
 		mergeFeatureClasses(tempDir)
+	else:
+		cleanup(tempDir)
+		
 def clipfeatureclasses(clipFeature, indir):
 	feature_classes = []
 	for root, _, files in os.walk(indir): #os.walk instead of arcpy.da.Walk because 10.1 sp1 is not installed
