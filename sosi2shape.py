@@ -8,6 +8,19 @@
 
 import arcpy, os, os.path, subprocess, re
 from arcpy import env
+
+#User options
+sosidir = "c:\\SOSI\\" #path to sosi files
+clipfeature = False  # path to feature class to clip from. Set to False to skip clippings
+#clipfeature = "c:\\sos\\clip.shp" #path to feature file to clip from comment this line to not clip features
+outputdir = "c:\\SOSI\\result\\" #dir to move the resulting files to
+merge = True # set this to false to not merge features
+deletepreclip = True # Set this to false to keep files that are created before clipping
+fileprefix = "^[0-9][0-9]_[0-9][0-9][0-9][0-9]" #Defines the common prefix for your sosifiles. Used when merging. You can use [0-9] to replace unknown numbers
+sosishapebin = r'"C:\Program Files (x86)\Geodata AS\SOSI-Shape\bin\Sosi2Av.exe"' # Path to the executable Sosi2Av.exe from Sosi<->shape
+
+
+
 koordsysdict = { #lookup dictionarythat maps the sosi koordsys variabe to arcgis spatialreference
 	1: arcpy.SpatialReference(27391),
 	2: arcpy.SpatialReference(27392),
@@ -35,14 +48,7 @@ koordsysdict = { #lookup dictionarythat maps the sosi koordsys variabe to arcgis
 	84: arcpy.SpatialReference(4326),
 	87: arcpy.SpatialReference(4231)
 }
-envworkspace = "c:\\SOSI\\" #path to sosi files
-clipfeature = False
-#clipfeature = "c:\\sos\\clip.shp" #path to feature file to clip from comment this line to not clip features
-outputdir = "c:\\SOSI\\result\\" #dir to move the resulting files to
-merge = True # set this to false to not merge features
-deletepreclip = True
-fileprefix = "^[0-9][0-9]_[0-9][0-9][0-9][0-9]" #you can use [0-9] to replace unknown numbers
-sosishapebin = r'"C:\Program Files (x86)\Geodata AS\SOSI-Shape\bin\Sosi2Av.exe"'
+
 def getKoordsys(sosifile):
 	with open(sosifile) as f:
 		for line in f:
@@ -54,7 +60,7 @@ def getKoordsys(sosifile):
 def mergeFeatureClasses(shapedir):
 	if not os.path.isdir(outputdir):
 		os.makedirs(outputdir)
-	for root, _, files in os.walk(envworkspace):
+	for root, _, files in os.walk(sosidir):
 	    for f in files:
 	        fullpath = os.path.join(root, f)
 	        if f.lower().endswith(".shp"):
@@ -96,13 +102,13 @@ def executeSosiShape(args, f,fullpath, tempDir,append):
 		defineProjection(fullpath, shapefile)
 
 def dir2shape(): 
-	tempDir = envworkspace+"tmp\\"
+	tempDir = sosidir+"tmp\\"
 	if not os.path.isdir(tempDir):
 		os.makedirs(tempDir)
 	lineargs = ' -L "{1}" "{0}"'
 	polygonargs = ' -F "{1}" "{0}"'
 	pointargs = ' -P "{1}" "{0}"'
-	for root, _, files in os.walk(envworkspace):
+	for root, _, files in os.walk(sosidir):
 	    for f in files:
 	        fullpath = os.path.join(root, f)
 	        if f.lower().endswith(".sos"):
