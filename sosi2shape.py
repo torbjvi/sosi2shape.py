@@ -57,10 +57,10 @@ def mergeFeatureClasses(fileprefix, shapedir, outputdir):
 	        if f.lower().endswith(".shp"):
 	        	m = re.search(fileprefix, f)
 	        	name = f[m.end():]
-			if not os.path.exists(outputdir+name):
+			if not os.path.exists(outputdir+name) and not removeEmptyShapeFile(fullpath):
 				arcpy.Copy_management(fullpath, outputdir+name)
 				arcpy.Delete_management(fullpath)
-			else:
+			elif not removeEmptyShapeFile(fullpath):
 				#SChould look into some potential mappings here
 				arcpy.Append_management([fullpath], outputdir+name, "NO_TEST")
 				arcpy.Delete_management(fullpath)
@@ -69,12 +69,14 @@ def mergeFeatureClasses(fileprefix, shapedir, outputdir):
 
 def removeEmptyShapeFile(shapefile):
 	#cleans up empty shape files after processing
+	if not os.path.exists(shapefile):
+		return True
 	count = int(arcpy.GetCount_management(shapefile).getOutput(0)) 
 	if count == 0:
 		print "Empty output, removing "+shapefile
 		arcpy.Delete_management(shapefile)
-		return False
-	return True
+		return True
+	return False
 
 def defineProjection(sosifile, shapefile):
 	koordsys = getKoordsys(sosifile)
@@ -88,13 +90,13 @@ def executeSosiShape(sosishapebin, args, f,fullpath, tempDir,append):
 	arg = args.format(fullpath, output)
 	a = subprocess.call(sosishapebin+arg, shell=True)
 	shapefile = output+'.shp'
-	if removeEmptyShapeFile(shapefile):
+	if not removeEmptyShapeFile(shapefile):
 		defineProjection(fullpath, shapefile)
 def cleanup(tempDir, outputdir):
 	for root, _, files in os.walk(tempDir):
 	    for f in files:
 	        fullpath = os.path.join(root, f)
-	        if f.lower().endswith(".shp"):
+	        if f.lower().endswith(".shp") and not removeEmptyShapeFile(fullpath):
 	            arcpy.Copy_management(fullpath,outputdir+f)
 	            arcpy.Delete_management(fullpath)
 def dir2shape(sosidir, clipfeature, outputdir, merge, deletepreclip, fileprefix, sosishapebin): 
@@ -127,8 +129,7 @@ def clipfeatureclasses(clipFeature, deletepreclip, indir):
 	        	feature_classes.append(fullpath)
 	for feature in feature_classes:
 		print "Clipping "+feature
-		shapefile =  feature.replace(".shp","")+"_clip.shp"
+		shapefile =  feature.replace(".shp","_clip.shp")
 		arcpy.Clip_analysis(feature, clipFeature, shapefile)
-		removeEmptyShapeFile(shapefile)
 		if deletepreclip:
 			arcpy.Delete_management(feature)
