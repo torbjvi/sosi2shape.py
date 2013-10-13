@@ -1,7 +1,9 @@
 sosi2shape.py
 =============
-
-Simple script that uses Geodatas Sosi&lt;->Shape 3.0 and ESRI's arcpy
+Requirements
+-----------
+SOSI<->Shape 3.0
+ArcGis extensions to python arcpy
 
 Description
 -----------
@@ -29,3 +31,12 @@ See example.py for sample usage
     fileprefix = "^[0-9][0-9]_[0-9][0-9][0-9][0-9]" #Defines the common prefix for your sosifiles. Used when merging. You can use [0-9] to replace unknown numbers
     sosishapebin = r'"C:\Program Files (x86)\Geodata AS\SOSI-Shape\bin\Sosi2Av.exe"' # Path to the executable Sosi2Av.exe from Sosi<->shape
     dir2shape(sosidir, clipfeature, outputdir, merge, deletepreclip, fileprefix, sosishapebin)
+
+Running
+-------
+
+        <path-to-python>\python.exe <script>
+
+Example:
+
+        C:\Python27\ArcGIS10.1\python.exe example.py
